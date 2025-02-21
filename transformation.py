@@ -3,13 +3,15 @@ import json
 from datetime import datetime
 
 def get_text(element):
-    return element.text if element is not None else ''
+    if element is None or element.text is None or element.text.strip() == "":
+        return None
+    return element.text.strip()
 
 def parse_date(date_str):
     try:
-        return datetime.strptime(date_str, "%Y%m%d").strftime("%Y-%m-%dT00:00:00")
+        return datetime.strptime(date_str, "%Y%m%d").strftime("%Y-%m-%dT00:00:00") if date_str else None
     except (ValueError, TypeError):
-        return ''
+        return None
 
 sample_string = input
 sample_string_bytes = sample_string.encode("UTF-8")
@@ -35,9 +37,9 @@ data["LastChangeDate"] = parse_date(data["LastChangeDate"])
 aliases = [
     f"{get_text(alias.find('ns:AliasQualifier', namespace))}:{get_text(alias.find('ns:AliasNumber', namespace))}"
     for alias in root.findall(".//ns:Alias", namespace)
-    if alias.find("ns:AliasQualifier", namespace) is not None and alias.find("ns:AliasNumber", namespace) is not None
+    if get_text(alias.find("ns:AliasQualifier", namespace)) and get_text(alias.find("ns:AliasNumber", namespace))
 ]
-data["Aliases"] = ", ".join(aliases)
+data["Aliases"] = ", ".join(aliases) if aliases else None
 
 # Mapping to output structure
 output_data = {
@@ -71,3 +73,5 @@ output_data = {
     "date_modified": data["LastChangeDate"],
     "modified_user_id": data["ChangeByID"]
 }
+
+output = json.dumps(output_data, ensure_ascii=False).encode('utf8')
